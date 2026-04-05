@@ -2,12 +2,12 @@
     "manifest_version": 3,
     "name": "YouTube Transcript Scraper",
     "version": "2.0.0",
-    "description": "Extract transcripts from all videos on a YouTube channel or playlist page.",
+    "description": "Extract transcripts from YouTube videos",
     "permissions": ["activeTab", "scripting", "storage", "tabs"],
     "host_permissions": ["https://www.youtube.com/*"],
     "action": {
         "default_popup": "popup.html",
-        "default_title": "YouTube Transcript Scraper",
+        "default_title": "Transcript Scraper",
         "default_icon": {
             "16": "icons/icon.png",
             "48": "icons/icon.png",
