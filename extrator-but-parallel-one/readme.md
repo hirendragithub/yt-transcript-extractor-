@@ -258,5 +258,5 @@ For issues or feature requests, please create an issue in the repository.
 
 
 
-\*\*Enjoy effortless video transcript extraction!\*\* 🎥📝
+\*\*Enjoy effortless video transcript extraction!\*\* 🎥📝	
 
