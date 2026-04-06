@@ -1,37 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <title>YouTube Transcript Scraper</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Transcript Scraper</title>
+  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-    <div class="shell">
-        <header class="toolbar">
-            <div class="app-mark" aria-hidden="true">
-                <span class="app-mark-glyph"></span>
-            </div>
-            <div class="button-container">
-                <button id="scrapeBtn" class="button button-primary">Scrape All Transcripts</button>
-                <button id="downloadBtn" class="button button-secondary" style="display: none;">Download JSON</button>
-            </div>
-        </header>
+  <div class="container">
+    <header class="header">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#FF0000"/>
+          <path d="M14 2V8H20" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 12H16" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M8 16H16" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M10 8H8" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <h1>YT Transcript Scraper</h1>
+      </div>
+      <span class="badge" id="pageType">Detecting...</span>
+    </header>
 
-        <!-- Progress Bar -->
-        <div class="progress-container">
-            <div class="progress-fill" id="progressFill"></div>
-        </div>
-
-        <!-- Current Video Display -->
-        <div class="current-video-container">
-            <span class="current-video-label">🎬 Now scraping:</span>
-            <span id="currentVideo" class="current-video-name">—</span>
-        </div>
-
-        <p id="status" class="status">Ready.</p>
-        <div id="transcript-output" class="transcript-box"></div>
+    <div class="stats-section">
+      <div class="stat-card">
+        <span class="stat-value" id="videoCount">0</span>
+        <span class="stat-label">Videos Found</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="scrapedCount">0</span>
+        <span class="stat-label">Scraped</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="errorCount">0</span>
+        <span class="stat-label">Errors</span>
+      </div>
     </div>
-    <script src="popup.js"></script>
+
+    <div class="progress-section" id="progressSection" style="display: none;">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="current-video">
+        <span class="label">▶ Now:</span>
+        <span class="value" id="currentVideo">—</span>
+      </div>
+    </div>
+
+    <div class="status-message" id="statusMessage">
+      Navigate to a YouTube channel or playlist
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="scrapeBtn" disabled>
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" fill="currentColor"/>
+          <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Start Scraping
+      </button>
+      <button class="btn btn-secondary" id="stopBtn" disabled>
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>
+        </svg>
+        Stop
+      </button>
+    </div>
+
+    <div class="download-section" id="downloadSection" style="display: none;">
+      <h3>Download Results</h3>
+      <div class="download-buttons">
+        <button class="btn btn-download" id="downloadJson">JSON</button>
+        <button class="btn btn-download" id="downloadCsv">CSV</button>
+        <button class="btn btn-download" id="downloadTxt">TXT</button>
+      </div>
+    </div>
+
+    <div class="preview-section" id="previewSection" style="display: none;">
+      <h3>Preview</h3>
+      <div class="preview-content" id="previewContent"></div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
 </body>
 </html>
