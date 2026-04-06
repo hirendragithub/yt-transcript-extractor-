@@ -20,6 +20,8 @@ const elements = {
   stopBtn: document.getElementById('stopBtn'),
   downloadSection: document.getElementById('downloadSection'),
   downloadJson: document.getElementById('downloadJson'),
+  downloadCsv: document.getElementById('downloadCsv'),
+  downloadTxt: document.getElementById('downloadTxt'),
   previewSection: document.getElementById('previewSection'),
   previewContent: document.getElementById('previewContent')
 };
@@ -170,6 +172,8 @@ function setupListeners() {
   elements.scrapeBtn.addEventListener('click', startScraping);
   elements.stopBtn.addEventListener('click', stopScraping);
   elements.downloadJson.addEventListener('click', () => downloadData('json'));
+  elements.downloadCsv.addEventListener('click', () => downloadData('csv'));
+  elements.downloadTxt.addEventListener('click', () => downloadData('txt'));
 }
 
 async function startScraping() {
@@ -194,7 +198,6 @@ async function stopScraping() {
 }
 
 async function downloadData(format) {
-  // Get latest transcripts from storage
   const result = await chrome.storage.local.get(['transcripts']);
   const transcripts = result.transcripts;
   
@@ -212,32 +215,49 @@ async function downloadData(format) {
     filename += '.json';
     mimeType = 'application/json';
   } else if (format === 'csv') {
-    // CSV header
+    // Safe CSV generation with proper escaping
     const headers = ['URL', 'Title', 'Video ID', 'Duration (sec)', 'Duration (formatted)', 'Transcript Text', 'Error', 'Scraped At'];
-    const rows = transcripts.map(t => [
-      t.url || '',
-      `"${(t.title || '').replace(/"/g, '""')}"`,
-      t.id || '',
-      t.duration?.seconds || '',
-      t.duration?.formatted || '',
-      t.transcript ? `"${t.transcript.replace(/"/g, '""')}"` : '',
-      t.transcriptError ? `"${t.transcriptError.replace(/"/g, '""')}"` : '',
-      new Date().toISOString()
-    ]);
+    const rows = transcripts.map(t => {
+      // Helper to escape CSV fields
+      const escapeCsv = (str) => {
+        if (str === undefined || str === null) return '';
+        const string = String(str);
+        if (string.includes(',') || string.includes('"') || string.includes('\n')) {
+          return '"' + string.replace(/"/g, '""') + '"';
+        }
+        return string;
+      };
+      const durationSec = t.duration?.seconds !== undefined ? t.duration.seconds : (t.duration ? t.duration : '');
+      const durationFmt = t.duration?.formatted || (typeof t.duration === 'string' ? t.duration : '');
+      return [
+        escapeCsv(t.url || ''),
+        escapeCsv(t.title || ''),
+        escapeCsv(t.id || ''),
+        escapeCsv(durationSec),
+        escapeCsv(durationFmt),
+        escapeCsv(t.transcript || ''),
+        escapeCsv(t.transcriptError || ''),
+        escapeCsv(new Date().toISOString())
+      ];
+    });
     content = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     filename += '.csv';
     mimeType = 'text/csv';
   } else if (format === 'txt') {
+    // Human-readable text format
     content = transcripts.map(t => {
+      const durationStr = t.duration?.formatted || (typeof t.duration === 'string' ? t.duration : 'N/A');
       let section = `========================================\n`;
-      section += `Title: ${t.title}\n`;
-      section += `URL: ${t.url}\n`;
-      section += `Video ID: ${t.id}\n`;
-      section += `Duration: ${t.duration?.formatted || 'N/A'}\n`;
+      section += `Title: ${t.title || 'Unknown'}\n`;
+      section += `URL: ${t.url || ''}\n`;
+      section += `Video ID: ${t.id || ''}\n`;
+      section += `Duration: ${durationStr}\n`;
       if (t.transcript) {
         section += `\n--- Transcript ---\n${t.transcript}\n`;
       } else if (t.transcriptError) {
         section += `\n--- Error ---\n${t.transcriptError}\n`;
+      } else {
+        section += `\n--- No transcript available ---\n`;
       }
       section += `========================================\n\n`;
       return section;
