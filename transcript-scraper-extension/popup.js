@@ -1,70 +1,133 @@
+// popup.js – shows progress with auto-refresh and progress bar
+const progressFill = document.getElementById('progressFill');
+
+function updateProgressBar(current, total) {
+    if (!progressFill) {
+        console.warn('Progress bar element not found');
+        return;
+    }
+    if (total && total > 0) {
+        let percent = (current / total) * 100;
+        percent = Math.min(100, Math.max(0, percent));
+        progressFill.style.width = `${percent}%`;
+    } else {
+        progressFill.style.width = '0%';
+    }
+}
+
 document.getElementById('scrapeBtn').addEventListener('click', async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab.url || !tab.url.includes('youtube.com')) {
-        document.getElementById('status').innerText = '❌ Open a YouTube channel or playlist first.';
+        document.getElementById('status').innerText = 'Please navigate to a YouTube page.';
         return;
     }
-    document.getElementById('downloadBtn').style.display = 'none';
-    document.getElementById('preview').style.display = 'none';
-    await chrome.storage.local.remove(['transcripts', 'progressText']);
+    // Clear previous state
+    await chrome.storage.local.remove([
+        'transcripts',
+        'totalVideos',
+        'currentIndex',
+        'isRunning',
+        'progressText',
+    ]);
+    updateProgressBar(0, 0);
     try {
         const response = await chrome.tabs.sendMessage(tab.id, { action: 'scrapeVideos' });
-        if (response && response.videoUrls.length) {
+        if (response && response.videoUrls && response.videoUrls.length) {
             chrome.runtime.sendMessage({ action: 'processVideos', urls: response.videoUrls });
-            document.getElementById('status').innerText = `📹 Found ${response.videoUrls.length} videos. Processing...`;
+            document.getElementById('status').innerText = `Found ${response.videoUrls.length} videos. Scraping started...`;
+            chrome.storage.local.set({
+                progressText: `Found ${response.videoUrls.length} videos. Scraping started...`,
+                totalVideos: response.videoUrls.length,
+                currentIndex: 0,
+            });
+            updateProgressBar(0, response.videoUrls.length);
         } else {
-            document.getElementById('status').innerText = '⚠️ No videos found.';
+            document.getElementById('status').innerText = 'No videos found on this page.';
         }
-    } catch (e) {
-        if (e.message.includes('Receiving end does not exist')) {
-            await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+    } catch (error) {
+        if (error.message.includes('Receiving end does not exist')) {
+            document.getElementById('status').innerText = 'Injecting content script...';
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                files: ['content.js'],
+            });
             const response = await chrome.tabs.sendMessage(tab.id, { action: 'scrapeVideos' });
             chrome.runtime.sendMessage({ action: 'processVideos', urls: response.videoUrls });
-            document.getElementById('status').innerText = `📹 Found ${response.videoUrls.length} videos. Processing...`;
+            document.getElementById('status').innerText = `Found ${response.videoUrls.length} videos. Scraping started...`;
+            chrome.storage.local.set({
+                totalVideos: response.videoUrls.length,
+                currentIndex: 0,
+            });
+            updateProgressBar(0, response.videoUrls.length);
         } else {
-            document.getElementById('status').innerText = `❌ Error: ${e.message}`;
+            document.getElementById('status').innerText = 'Error: ' + error.message;
         }
     }
 });
 
-chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.action === 'updateProgress') {
-        document.getElementById('status').innerText = msg.text;
-        chrome.storage.local.set({ progressText: msg.text });
+// Listen for progress updates from background
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'updateProgress') {
+        document.getElementById('status').innerText = message.text;
+        chrome.storage.local.set({ progressText: message.text });
     }
-    if (msg.action === 'scrapeComplete') {
-        document.getElementById('status').innerText = '✅ Complete!';
+    if (message.action === 'scrapeComplete') {
+        document.getElementById('status').innerText = 'All transcripts scraped!';
         document.getElementById('downloadBtn').style.display = 'block';
-        chrome.storage.local.set({ transcripts: msg.data, progressText: '' });
-        if (msg.data && msg.data[0]) {
-            const preview = document.getElementById('preview');
-            preview.style.display = 'block';
-            preview.innerHTML = `<h4>📄 Preview (first)</h4><p><strong>${escapeHtml(msg.data[0].title)}</strong><br>${escapeHtml((msg.data[0].transcript || '').substring(0, 300))}...</p>`;
+        chrome.storage.local.set({ transcripts: message.data, isRunning: false, progressText: '' });
+        updateProgressBar(1, 1); // full bar
+        
+        if (message.data && message.data.length > 0) {
+            const output = document.getElementById('transcript-output');
+            output.innerHTML = '';
+            const preview = document.createElement('div');
+            preview.innerHTML = `<strong>Preview (first video):</strong><br><br>${message.data[0].title || 'Untitled'}<br><br>${(message.data[0].transcript || '').substring(0, 500)}${(message.data[0].transcript || '').length > 500 ? '...' : ''}`;
+            output.appendChild(preview);
         }
     }
 });
 
-function escapeHtml(str) { return str.replace(/[&<>]/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]; }); }
-
-chrome.storage.local.get(['progressText', 'transcripts'], (data) => {
-    if (data.progressText) document.getElementById('status').innerText = data.progressText;
-    if (data.transcripts && data.transcripts.length) {
-        document.getElementById('downloadBtn').style.display = 'block';
-        const preview = document.getElementById('preview');
-        preview.style.display = 'block';
-        preview.innerHTML = `<h4>📄 Preview (first)</h4><p><strong>${escapeHtml(data.transcripts[0].title)}</strong><br>${escapeHtml((data.transcripts[0].transcript || '').substring(0, 300))}...</p>`;
+// Restore progress when popup opens and update bar
+chrome.storage.local.get(
+    ['progressText', 'isRunning', 'currentIndex', 'totalVideos', 'transcripts'],
+    (data) => {
+        if (data.progressText) {
+            document.getElementById('status').innerText = data.progressText;
+        } else if (data.isRunning && data.totalVideos) {
+            document.getElementById('status').innerText = `Scraping in progress: ${data.currentIndex}/${data.totalVideos} videos processed.`;
+        }
+        if (data.totalVideos) {
+            updateProgressBar(data.currentIndex || 0, data.totalVideos);
+        }
+        
+        if (data.transcripts && data.transcripts.length > 0 && !data.isRunning) {
+            document.getElementById('downloadBtn').style.display = 'block';
+            const output = document.getElementById('transcript-output');
+            output.innerHTML = '';
+            const preview = document.createElement('div');
+            preview.innerHTML = `<strong>Preview (first video):</strong><br><br>${data.transcripts[0].title || 'Untitled'}<br><br>${(data.transcripts[0].transcript || '').substring(0, 500)}${(data.transcripts[0].transcript || '').length > 500 ? '...' : ''}`;
+            output.appendChild(preview);
+        }
     }
-});
+);
 
+// Refresh every second – update status text and progress bar
 setInterval(() => {
-    chrome.storage.local.get(['progressText'], (data) => {
-        if (data.progressText) document.getElementById('status').innerText = data.progressText;
+    chrome.storage.local.get(['progressText', 'currentIndex', 'totalVideos'], (data) => {
+        if (data.progressText) {
+            document.getElementById('status').innerText = data.progressText;
+        }
+        if (data.totalVideos) {
+            updateProgressBar(data.currentIndex || 0, data.totalVideos);
+        }
     });
 }, 1000);
 
 document.getElementById('downloadBtn').addEventListener('click', () => {
-    chrome.storage.local.get('transcripts', (res) => {
-        const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(res.transcripts, null, 2));
+    chrome.storage.local.get('transcripts', (result) => {
+        const dataStr =
+            'data:text/json;charset=utf-8,' +
+            encodeURIComponent(JSON.stringify(result.transcripts, null, 2));
         const a = document.createElement('a');
         a.href = dataStr;
         a.download = 'transcripts.json';

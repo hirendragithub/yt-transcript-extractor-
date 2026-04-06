@@ -1,24 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <style>
-        body { width: 360px; padding: 16px; font-family: system-ui, sans-serif; margin: 0; background: #1e1e2e; color: #cdd6f4; }
-        button { width: 100%; padding: 10px; margin-bottom: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-primary { background: #89b4fa; color: #1e1e2e; }
-        .btn-secondary { background: #313244; color: #cdd6f4; }
-        .status { background: #11111b; padding: 10px; border-radius: 8px; font-size: 12px; font-family: monospace; margin-bottom: 12px; white-space: pre-wrap; word-break: break-word; }
-        .preview { background: #11111b; padding: 10px; border-radius: 8px; font-size: 12px; margin-top: 12px; display: none; }
-        .preview h4 { margin: 0 0 8px 0; color: #89b4fa; }
-        .preview p { margin: 0; color: #a6adc8; }
-    </style>
-    <title>Transcript Scraper</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>YouTube Transcript Scraper</title>
 </head>
 <body>
-    <button id="scrapeBtn" class="btn-primary">▶ Scrape Transcripts</button>
-    <div id="status" class="status">Ready.</div>
-    <div id="preview" class="preview"></div>
-    <button id="downloadBtn" class="btn-secondary" style="display:none;">📥 Download JSON</button>
+    <div class="shell">
+        <header class="toolbar">
+            <div class="app-mark" aria-hidden="true">
+                <span class="app-mark-glyph"></span>
+            </div>
+            <div class="button-container">
+                <button id="scrapeBtn" class="button button-primary">Scrape All Transcripts</button>
+                <button id="downloadBtn" class="button button-secondary" style="display: none;">Download JSON</button>
+            </div>
+        </header>
+
+        <!-- PROGRESS BAR (make sure this is present) -->
+        <div class="progress-container">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <p id="status" class="status">Ready.</p>
+        <div id="transcript-output" class="transcript-box"></div>
+    </div>
     <script src="popup.js"></script>
 </body>
 </html>
