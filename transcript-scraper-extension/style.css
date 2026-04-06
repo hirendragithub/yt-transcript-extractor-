@@ -71,6 +71,34 @@ body {
     box-shadow: 0 0 6px var(--accent-glow);
 }
 
+/* Current Video Display */
+.current-video-container {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.75rem;
+    border: 1px solid var(--border-subtle);
+    backdrop-filter: blur(4px);
+}
+
+.current-video-label {
+    color: var(--accent-cyan);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.current-video-name {
+    color: var(--text-primary);
+    font-family: monospace;
+    font-size: 0.7rem;
+    word-break: break-all;
+    flex: 1;
+    line-height: 1.4;
+}
+
 /* Header / Toolbar */
 .toolbar {
     display: flex;
