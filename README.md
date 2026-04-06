@@ -9,6 +9,7 @@ All content is stored under one root folder for simplicity and portability.
 
 ### Visual Folder Tree
 
+~~~
 Content_Creation/
 ├── 01_Ideas_Research/
 │   ├── Idea_Backlog/
@@ -59,6 +60,7 @@ Content_Creation/
     ├── Longform_to_Shorts/
     ├── Clips/
     └── Quotes_Text/
+~~~
 
 ## Folder Breakdown
 
@@ -75,15 +77,20 @@ Content_Creation/
 ## Folder Naming Convention
 Use sortable names:
 
+~~~
 YYYY-MM-DD_Platform_ContentType_Title_Version
+~~~
 
 Example:
 
+~~~
 2026-04-06_YT_Video_How-to-Grow-V1.mp4
+~~~
 
 ## Cross-Platform Folder Creation Scripts
 
 ### Windows (PowerShell)
+~~~
 $root = "Content_Creation"
 $folders = @(
 "01_Ideas_Research/Idea_Backlog","01_Ideas_Research/Trends","01_Ideas_Research/Competitor_Analysis","01_Ideas_Research/Scripts_Drafts","01_Ideas_Research/Swipe_Files",
@@ -100,8 +107,10 @@ foreach ($folder in $folders) {
     New-Item -ItemType Directory -Path (Join-Path $root $folder) -Force | Out-Null
 }
 Write-Host "Folder structure created successfully under '$root'"
+~~~
 
 ### macOS / Linux (Bash)
+~~~
 #!/bin/bash
 root="Content_Creation"
 folders=(
@@ -119,7 +128,6 @@ for folder in "${folders[@]}"; do
     mkdir -p "$root/$folder"
 done
 echo "Folder structure created successfully under '$root'"
-
----
+~~~
 
 ✅ This setup ensures your content workflow is **organized, single-folder, scalable, and cross-platform ready**.
